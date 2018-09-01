@@ -9,78 +9,69 @@ type Options = {
 export default async function validateVersions(opts: Options = {}) {
   let cwd = opts.cwd || process.cwd();
   let project = await Project.init(cwd);
-  let invalidDeps = new Map();
-  let rootDependencies = project.pkg.getAllDependencies();
-  // console.log(rootDependencies);
-
-  // console.log("\nROOT DEPS:");
-  // rootDependencies.forEach((version, name) => {
-  // console.log(pName, p);
-  // });
-
-  const internalPackages = await project.getPackages();
+  const invalidDeps = new Map();
+  const rootDependencies = project.pkg.getAllDependencies();
+  const packages = await project.getPackages();
   const internalPackageVersions = {};
-  internalPackages.forEach(
+
+  // For convenience: Save (object) map of internal packages and versions
+  packages.forEach(
     pkg => (internalPackageVersions[pkg.getName()] = pkg.getVersion())
   );
-  internalPackages.forEach(_checkPackageDeps);
 
+  packages.forEach(_checkPackageDeps);
   _printInvalids(invalidDeps);
-  return invalidDeps.size === 0;
+
+  return invalidDeps;
 
   function _checkPackageDeps(pkg) {
-    // console.log(`\n\n>>> PACKAGE ${pkg.getName()} <<<`);
     const pkgName = pkg.getName();
+    const pinnedVersions = pkg.getPinnedVersions();
 
     pkg.getAllDependencies().forEach((pkgDepVersion, pkgDepName) => {
-      // console.log("  ", depName, depVersion);
+      let message;
       const rootVersion = rootDependencies.get(pkgDepName);
       const internalVersion = internalPackageVersions[pkgDepName];
 
-      if (rootVersion && pkgDepVersion !== rootVersion)
-        _addInvalidDep(
-          'rootVersion',
-          rootVersion,
+      const { version: pinnedVersion, until: pinnedUntil } =
+        pinnedVersions[pkgDepName] || {};
+
+      const trimmedSemver = /^(\^|~)?(.+)$/.exec(pkgDepVersion)[2];
+
+      if (pinnedVersion && pkgDepVersion !== pinnedVersion)
+        message = `${pkgDepName}: ${pkgDepVersion} (Does not match pinned version ${pinnedVersion})`;
+      else if (pinnedVersion && Date.now() > Date.parse(pinnedUntil))
+        message = `${pkgDepName}: ${pkgDepVersion} (Pinned version expired on ${pinnedUntil})`;
+      else if (rootVersion && pkgDepVersion !== rootVersion && !pinnedVersion)
+        message = `${pkgDepName}: ${pkgDepVersion} (Version at project root is ${rootVersion})`;
+      else if (internalVersion && trimmedSemver !== internalVersion)
+        message = `${pkgDepName}: ${pkgDepVersion} (Current package version is ${internalVersion})`;
+
+      if (message) {
+        _addInvalidDep({
           pkgName,
           pkgDepName,
-          pkgDepVersion
-        );
-      else if (
-        internalVersion &&
-        _removeSemverRangeSpecifier(pkgDepVersion) !== internalVersion
-      )
-        _addInvalidDep(
-          'internalVersion',
-          internalVersion,
-          pkgName,
-          pkgDepName,
-          pkgDepVersion
-        );
+          pkgDepVersion,
+          pinnedVersion,
+          pinnedUntil,
+          message
+        });
+      }
     });
   }
 
-  function _removeSemverRangeSpecifier(semver) {
-    return semver[0] == '^' || semver[0] == '~' ? semver.substr(1) : semver;
-  }
-
-  function _addInvalidDep(
-    mismatchType,
-    mismatchVersion,
-    pkgName,
-    pkgDepName,
-    pkgDepVersion
-  ) {
-    // console.log(mismatchType, mismatchVersion, pkgName, pkgDepName, pkgDepVersion);
-    const mismatchInfo = { mismatchType, mismatchVersion, pkgDepVersion };
+  function _addInvalidDep(invalidDepInfo) {
+    const { pkgName, pkgDepName, message } = invalidDepInfo;
 
     if (!invalidDeps.has(pkgName)) {
-      const pkgInvalidDeps = new Map([[pkgDepName, mismatchInfo]]);
+      const pkgInvalidDeps = new Map([[pkgDepName, invalidDepInfo]]);
       invalidDeps.set(pkgName, pkgInvalidDeps);
     } else {
-      invalidDeps.get(pkgName).set(pkgDepName, mismatchInfo);
+      invalidDeps.get(pkgName).set(pkgDepName, invalidDepInfo);
     }
   }
 
+  // For debugging: not formatted for consumers
   function _printInvalids(invalidDeps) {
     console.log('\nINVALIDS');
     console.log('-----------------------------');
@@ -88,12 +79,8 @@ export default async function validateVersions(opts: Options = {}) {
     invalidDeps.forEach((pkgInvalidDeps, pkgName) => {
       console.log('PACKAGE', pkgName);
 
-      pkgInvalidDeps.forEach((mismatchInfo, depName) => {
-        const { mismatchType, mismatchVersion, pkgDepVersion } = mismatchInfo;
-
-        console.log(
-          `  ${depName}: ${pkgDepVersion} (${mismatchType} ${mismatchVersion})`
-        );
+      pkgInvalidDeps.forEach(mismatchInfo => {
+        console.log('  ', mismatchInfo.message);
       });
     });
 

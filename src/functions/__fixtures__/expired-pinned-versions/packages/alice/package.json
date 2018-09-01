@@ -1,0 +1,15 @@
+{
+  "name": "alice",
+  "version": "1.0.0",
+  "dependencies": {
+    "bob": "^1.0.0",
+    "faker": "^3.1.0",
+    "tickedoff": "^1.0.2"
+  },
+  "pinnedVersions": {
+    "faker": {
+      "version": "^3.1.0",
+      "until": "2018-01-01"
+    }
+  }
+}

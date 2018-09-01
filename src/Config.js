@@ -66,6 +66,24 @@ function toObjectOfStrings(value: JSONValue, message: string) {
   return safeCopy;
 }
 
+//TODO: This needs checking
+function toObjectOfObjectsOfStrings(value: JSONValue, message: string) {
+  let safeRef = toObject(value, message);
+  let safeCopy = {};
+
+  Object.keys(safeRef).forEach(k => {
+    let safeSubRef = toObjectOfStrings(safeRef[k], message);
+
+    if (typeof safeSubRef !== 'object') {
+      throw new BoltError(message);
+    } else {
+      safeCopy[k] = safeSubRef;
+    }
+  });
+
+  return safeCopy;
+}
+
 export default class Config {
   filePath: string;
   fileContents: string;
@@ -249,6 +267,17 @@ export default class Config {
     return toObjectOfStrings(
       deps,
       `package.json#${depType} must be an object of strings. See "${this
+        .filePath}"`
+    );
+  }
+
+  getPinnedVersions() {
+    let config = this.getConfig();
+    let pinnedVersions = config.pinnedVersions;
+    if (typeof pinnedVersions === 'undefined') return;
+    return toObjectOfObjectsOfStrings(
+      pinnedVersions,
+      `package.json#pinnedDependencies must be an object of objects of strings. See "${this
         .filePath}"`
     );
   }

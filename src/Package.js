@@ -61,6 +61,10 @@ export default class Package {
     return allDependencies;
   }
 
+  getPinnedVersions() {
+    return this.config.getPinnedVersions() || {};
+  }
+
   async setDependencyVersionRange(
     depName: string,
     depType: string,
