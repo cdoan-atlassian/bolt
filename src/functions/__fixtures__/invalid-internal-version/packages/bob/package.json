@@ -1,0 +1,7 @@
+{
+  "name": "bob",
+  "version": "2.0.0",
+  "dependencies": {
+    "faker": "^4.1.0"
+  }
+}

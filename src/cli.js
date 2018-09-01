@@ -8,6 +8,8 @@ import { BoltError } from './utils/errors';
 import cleanStack from 'clean-stack';
 import * as commands from './commands';
 import * as options from './utils/options';
+//
+import validateVersions from './functions/validateVersions';
 
 const commandMap = {
   ADD: { add: true },
@@ -102,6 +104,12 @@ const commandMap = {
 function runCommandFromCli(args: options.Args, flags: options.Flags) {
   let [command, ...commandArgs] = args;
   let [subCommand, ...subCommandArgs] = commandArgs;
+
+  //
+  if (command === 'x') {
+    return validateVersions();
+  }
+  //
 
   if (commandMap.ADD[command]) {
     return commands.add(commands.toAddOptions(commandArgs, flags));

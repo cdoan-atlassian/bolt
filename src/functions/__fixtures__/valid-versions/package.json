@@ -1,0 +1,16 @@
+{
+  "name": "dep-versions",
+  "version": "1.0.0",
+  "dependencies": {
+    "faker": "^4.1.0",
+    "tickedoff": "^1.0.2"
+  },
+  "devDependencies": {
+    "bolt": "^0.20.7"
+  },
+  "bolt": {
+    "workspaces": [
+      "packages/*"
+    ]
+  }
+}

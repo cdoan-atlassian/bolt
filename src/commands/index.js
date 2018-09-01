@@ -44,5 +44,7 @@ module.exports = {
   ...require('./versions'),
   ...require('./why'),
   ...require('./workspace'),
-  ...require('./workspaces')
+  ...require('./workspaces'),
+
+  ...require('./__validateWithSpecificVersions')
 };

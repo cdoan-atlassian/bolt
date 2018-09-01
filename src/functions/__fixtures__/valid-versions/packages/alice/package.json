@@ -1,0 +1,9 @@
+{
+  "name": "alice",
+  "version": "1.0.0",
+  "dependencies": {
+    "bob": "^1.0.0",
+    "faker": "^4.1.0",
+    "tickedoff": "^1.0.2"
+  }
+}

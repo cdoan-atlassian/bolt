@@ -1,0 +1,7 @@
+{
+  "name": "charlie",
+  "version": "1.0.0",  
+  "dependencies": {
+    "tickedoff": "^1.0.2"
+  }
+}
